@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <rect width="200" height="200" rx="16" fill="#fef3c7"/>
+  <!-- Ears -->
+  <polygon points="55,75 40,25 80,60" fill="#f59e0b"/>
+  <polygon points="145,75 160,25 120,60" fill="#f59e0b"/>
+  <polygon points="58,72 48,35 78,62" fill="#fde68a"/>
+  <polygon points="142,72 152,35 122,62" fill="#fde68a"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="100" rx="55" ry="50" fill="#f59e0b"/>
+  <!-- Eyes -->
+  <ellipse cx="80" cy="90" rx="8" ry="9" fill="#fef3c7"/>
+  <ellipse cx="120" cy="90" rx="8" ry="9" fill="#fef3c7"/>
+  <ellipse cx="80" cy="91" rx="4" ry="5" fill="#1e1e2e"/>
+  <ellipse cx="120" cy="91" rx="4" ry="5" fill="#1e1e2e"/>
+  <!-- Nose -->
+  <polygon points="100,105 95,112 105,112" fill="#ec4899"/>
+  <!-- Mouth -->
+  <path d="M95,112 Q100,120 105,112" fill="none" stroke="#1e1e2e" stroke-width="1.5"/>
+  <!-- Whiskers -->
+  <line x1="40" y1="105" x2="75" y2="108" stroke="#1e1e2e" stroke-width="1.5"/>
+  <line x1="40" y1="115" x2="75" y2="113" stroke="#1e1e2e" stroke-width="1.5"/>
+  <line x1="160" y1="105" x2="125" y2="108" stroke="#1e1e2e" stroke-width="1.5"/>
+  <line x1="160" y1="115" x2="125" y2="113" stroke="#1e1e2e" stroke-width="1.5"/>
+  <!-- Label -->
+  <text x="100" y="170" text-anchor="middle" font-family="monospace" font-size="16" fill="#92400e" font-weight="bold">cat.svg</text>
+</svg>
