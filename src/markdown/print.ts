@@ -34,6 +34,8 @@ export function print(current: Root, base?: Base, options: PrintOptions = {}): s
   const baseTree = base.tree ?? parse(base.source)
   const baseView = view(baseTree)
   if (same(current, baseView)) return base.source
+  // A root is always the base's root, whether or not the app kept its position.
+  if (!current.position && baseTree.position) current = { ...current, position: baseTree.position }
 
   const printer = new Printer(base.source, baseTree, baseView)
   const target = comparable(current)

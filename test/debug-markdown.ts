@@ -1,4 +1,4 @@
-// node test/debug.ts [file-filter] [label-filter]: prints every failing edit with its diff.
+// node test/debug-markdown.ts [file-filter] [label-filter]: prints every failing edit with its diff.
 import { parse } from '../src/markdown/index.ts'
 import { edits, files, read, run } from './harness.ts'
 

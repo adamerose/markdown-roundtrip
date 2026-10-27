@@ -8,6 +8,7 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "erasableSyntaxOnly": true,
+    "jsx": "react-jsx",
     "skipLibCheck": true,
     "types": ["node"]
   },
