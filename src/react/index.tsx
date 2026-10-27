@@ -7,6 +7,7 @@ export { configureHost, host, type Host } from './host.ts'
 export { FrontmatterView } from './Frontmatter.tsx'
 export { MermaidView } from './Mermaid.tsx'
 export { ImageView, MathView, RawView } from './views.tsx'
+export { MARKDOWN_SHORTCUTS } from './shortcuts.ts'
 
 // Importing this entry gives the shared nodes their views.
 setRenderers({
