@@ -39,10 +39,14 @@ export function viewThroughLexical(tree: Root): Root {
   return view
 }
 
-/** Loads Markdown into the editor. Keep the returned base to save against. */
-export function loadMarkdown(editor: LexicalEditor, source: string, options: { tag?: string } = {}): Base {
+/**
+ * Loads Markdown into the editor. Keep the returned base to save against.
+ * The load commits like any other update (not inside the caller's React
+ * render or effect); `onUpdate` runs once it has.
+ */
+export function loadMarkdown(editor: LexicalEditor, source: string, options: { tag?: string; onUpdate?: () => void } = {}): Base {
   const tree = parse(source)
-  editor.update(() => $importMdast(tree), { discrete: true, tag: options.tag })
+  editor.update(() => $importMdast(tree), { tag: options.tag, onUpdate: options.onUpdate })
   return { source, tree }
 }
 
