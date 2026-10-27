@@ -12,7 +12,7 @@ import { print, type Base } from '../markdown/print.ts'
 import { $exportMdast, $importMdast } from './mdast.ts'
 import { FrontmatterNode, ImageNode, InlineMathNode, MARKDOWN_LIST_REPLACEMENT, MarkdownListNode, MathNode, MermaidNode, RawNode } from './nodes.ts'
 
-export { $exportMdast, $importMdast } from './mdast.ts'
+export { $exportMdast, $importMdast, $isHtmlTable, $setHtmlTable } from './mdast.ts'
 export * from './nodes.ts'
 export { chainState, extraState, softState, spanState, type Span } from './state.ts'
 export { renderers, setRenderers, type Renderers } from './renderers.ts'
@@ -25,12 +25,18 @@ export const MARKDOWN_NODES: Array<Klass<LexicalNode> | LexicalNodeReplacement> 
 ]
 
 let viewer: LexicalEditor | undefined
+// A base's view is asked for on every save; the base tree does not change.
+const views = new WeakMap<Root, Root>()
 
 /** What a tree becomes after a trip through the editor: print()'s `view` for a Lexical app. */
 export function viewThroughLexical(tree: Root): Root {
+  const cached = views.get(tree)
+  if (cached) return cached
   viewer ??= createHeadlessEditor({ nodes: MARKDOWN_NODES, onError: (e) => { throw e } })
   viewer.update(() => $importMdast(tree), { discrete: true })
-  return viewer.read(() => $exportMdast())
+  const view = viewer.read(() => $exportMdast())
+  views.set(tree, view)
+  return view
 }
 
 /** Loads Markdown into the editor. Keep the returned base to save against. */

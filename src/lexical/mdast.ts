@@ -14,7 +14,7 @@ import {
   $createTableCellNode, $createTableNode, $createTableRowNode, $isTableCellNode, $isTableNode, $isTableRowNode, TableCellHeaderStates,
 } from '@lexical/table'
 import { $createHorizontalRuleNode, $isHorizontalRuleNode } from '@lexical/react/LexicalHorizontalRuleNode'
-import { render } from '../markdown/parse.ts'
+import { parse, render } from '../markdown/parse.ts'
 import {
   $createFrontmatterNode, $createImageNode, $createInlineMathNode, $createMathNode, $createMermaidNode, $createRawNode,
   $isFrontmatterNode, $isImageNode, $isInlineMathNode, $isMathNode, $isMermaidNode, $isRawNode,
@@ -97,7 +97,7 @@ class Importer {
       case 'thematicBreak':
         return mark($createHorizontalRuleNode(), node)
       case 'html':
-        return mark($createRawNode(node.value, false), node)
+        return this.htmlTable(node) ?? mark($createRawNode(node.value, false), node)
       case 'table':
         return this.table(node)
       case 'definition':
@@ -186,6 +186,28 @@ class Importer {
       }
       table.append(tr)
     })
+    return table
+  }
+
+  /** A `<table>` block as a table the user can edit, written back as HTML. */
+  private htmlTable(node: Html): LexicalNode | null {
+    const rows = parseHtmlTable(node.value)
+    if (!rows) return null
+    const table = extra(mark($createTableNode(), node), { html: true })
+    const widths = parseHtmlColWidths(node.value)
+    if (widths.length > 0) table.setColWidths(widths)
+    for (const cells of rows) {
+      const tr = $createTableRowNode()
+      for (const cell of cells) {
+        const td = $createTableCellNode(cell.header ? TableCellHeaderStates.ROW : TableCellHeaderStates.NO_STATUS)
+        const p = $createParagraphNode()
+        const first = parse(cell.text).children[0]
+        if (first?.type === 'paragraph') this.inline(p, first.children, [], [])
+        td.append(p)
+        tr.append(td)
+      }
+      table.append(tr)
+    }
     return table
   }
 
@@ -312,6 +334,12 @@ function exportBlock(node: LexicalNode): RootContent[] {
   }
   if ($isQuoteNode(node)) {
     const children = flow(node.getChildren(), extraOf(node).paragraph as Span | undefined)
+    // A callout's `[!TYPE]` must end its line, so the break after it is a line ending, not a hard break.
+    const first = children[0]
+    if (first?.type === 'paragraph') {
+      const [marker, br] = first.children
+      if (marker?.type === 'text' && /^\[![A-Za-z]+\][+-]?$/.test(marker.value) && br?.type === 'break') first.children.splice(1, 1, { type: 'text', value: '\n' })
+    }
     return [{ type: 'blockquote', children: children as Blockquote['children'], ...at(node, 'blockquote') }]
   }
   if ($isListNode(node)) return [exportList(node)]
@@ -340,6 +368,7 @@ function exportBlock(node: LexicalNode): RootContent[] {
       }
       rows.push({ type: 'tableRow', children: cells, ...at(row, 'tableRow') })
     }
+    if (extraOf(node).html === true) return [{ type: 'html', value: htmlTable(rows, node.getColWidths()), ...at(node, 'html') }]
     const align = (extraOf(node).align as Table['align']) ?? null
     return [{ type: 'table', align, children: rows, ...at(node, 'table') }]
   }
@@ -459,6 +488,62 @@ function build(items: Item[]): PhrasingContent[] {
     i = j
   }
   return out
+}
+
+// ── HTML tables ─────────────────────────────────────────────────────────────
+
+type HtmlCell = { text: string; header: boolean }
+
+/** The rows of a `<table>` block holding only rows of cells, or null for any other HTML. */
+function parseHtmlTable(html: string): HtmlCell[][] | null {
+  if (!/^\s*<table[\s>]/i.test(html) || !/<\/table>\s*$/i.test(html)) return null
+  const rows: HtmlCell[][] = []
+  for (const tr of html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const cells: HtmlCell[] = []
+    for (const cell of (tr[1] ?? '').matchAll(/<(td|th)[^>]*>([\s\S]*?)<\/\1>/gi)) {
+      cells.push({ text: (cell[2] ?? '').replace(/<[^>]*>/g, '').trim(), header: (cell[1] ?? '').toLowerCase() === 'th' })
+    }
+    if (cells.length > 0) rows.push(cells)
+  }
+  return rows.length > 0 ? rows : null
+}
+
+/** Column widths from `<col>` elements. */
+function parseHtmlColWidths(html: string): number[] {
+  const widths: number[] = []
+  for (const col of html.matchAll(/<col[^>]*(?:width=["'](\d+)(?:px)?["']|style=["'][^"']*width:\s*(\d+)(?:px)?[^"']*["'])[^>]*\/?>/gi)) {
+    const w = parseInt(col[1] ?? col[2] ?? '', 10)
+    if (!isNaN(w)) widths.push(w)
+  }
+  return widths
+}
+
+function htmlTable(rows: TableRow[], widths: readonly number[] | undefined): string {
+  const lines = ['<table>']
+  if (widths && widths.length > 0) {
+    lines.push('  <colgroup>')
+    for (const w of widths) lines.push(`    <col style="width: ${Math.round(w)}px" />`)
+    lines.push('  </colgroup>')
+  }
+  const cellText = (cell: TableCell) => render({ type: 'root', children: [{ type: 'paragraph', children: cell.children }] }).replace(/\n/g, ' ').trim()
+  const row = (r: TableRow, tag: 'th' | 'td') => ['    <tr>', ...r.children.map((c) => `      <${tag}>${cellText(c)}</${tag}>`), '    </tr>']
+  const [head, ...body] = rows
+  if (head) lines.push('  <thead>', ...row(head, 'th'), '  </thead>')
+  if (body.length > 0) lines.push('  <tbody>', ...body.flatMap((r) => row(r, 'td')), '  </tbody>')
+  lines.push('</table>')
+  return lines.join('\n')
+}
+
+/** Whether a table is written as an HTML `<table>` (which can hold column widths) rather than a pipe table. */
+export function $isHtmlTable(node: LexicalNode): boolean {
+  return extraOf(node).html === true
+}
+
+export function $setHtmlTable(node: LexicalNode, html: boolean): void {
+  const x = { ...extraOf(node) }
+  if (html) x.html = true
+  else delete x.html
+  $setState(node, extraState, x)
 }
 
 function walk(node: Nodes, visit: (node: Nodes) => void): void {
