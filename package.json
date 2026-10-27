@@ -8,7 +8,8 @@
   "exports": {
     "./markdown": "./src/markdown/index.ts",
     "./lexical": "./src/lexical/index.ts",
-    "./react": "./src/react/index.tsx"
+    "./react": "./src/react/index.tsx",
+    "./render": "./src/render/index.ts"
   },
   "files": [
     "src"
@@ -62,8 +63,48 @@
     "@lexical/react": "0.44.0",
     "@lexical/rich-text": "0.44.0",
     "@lexical/table": "0.44.0",
+    "katex": ">=0.16.0",
     "lexical": "0.44.0",
+    "mermaid": ">=11.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@lexical/code": {
+      "optional": true
+    },
+    "@lexical/headless": {
+      "optional": true
+    },
+    "@lexical/link": {
+      "optional": true
+    },
+    "@lexical/list": {
+      "optional": true
+    },
+    "@lexical/react": {
+      "optional": true
+    },
+    "@lexical/rich-text": {
+      "optional": true
+    },
+    "@lexical/table": {
+      "optional": true
+    },
+    "lexical": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "katex": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    }
   }
 }

@@ -8,7 +8,10 @@ Consumers depend on it as a git dependency pinned to a commit.
 - `markdown-roundtrip/markdown` — no Lexical, no React. `parse` reads Markdown (CommonMark, GFM, YAML frontmatter, math) into mdast with source positions.
   `print(tree, base)` writes a tree back against the file it came from: unchanged nodes are the base's exact bytes, changed nodes keep the syntax of the node they replace, new nodes take their neighbours' or the file's style, and the output is read back and re-rendered where it would mean something else.
 - `markdown-roundtrip/lexical` — the shared Lexical nodes and the Lexical ↔ mdast mapping. Every imported node keeps the source span of the mdast node it came from (Lexical node state), so an export carries positions and `saveMarkdown` keeps the bytes of what the user did not touch. `viewThroughLexical` is the `view` that tells the printer what an unedited trip through the editor looks like.
-- `markdown-roundtrip/react` (planned) — the shared editing plugins and UI pieces.
+- `markdown-roundtrip/react` — the React views for the nodes Lexical cannot draw itself (Mermaid, math, images, frontmatter, raw HTML), the typing shortcuts, and `configureHost` for what the app supplies (theme, image paths, error reporting).
+- `markdown-roundtrip/render` — Mermaid and KaTeX rendering as plain functions, for the views above and for read-only renderers such as react-markdown.
+
+Every peer dependency is optional: an app installs the ones its entry points use.
 
 Nothing here knows Jotis blocks or the extension's webview protocol; each app maps its own model to mdast.
 

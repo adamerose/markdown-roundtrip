@@ -1,18 +1,10 @@
 import type { JSX } from 'react'
-import katex from 'katex'
 import { host } from './host.ts'
-
-function renderKatex(expression: string, displayMode: boolean): string | null {
-  try {
-    return katex.renderToString(expression, { throwOnError: false, displayMode })
-  } catch {
-    return null
-  }
-}
+import { renderMath } from '../render/index.ts'
 
 /** `$…$` or `$$…$$`, rendered by KaTeX; the source when it cannot be. */
 export function MathView({ value, inline }: { value: string; inline: boolean; nodeKey: string }): JSX.Element {
-  const html = renderKatex(value, !inline)
+  const html = renderMath(value, !inline)
   if (inline) {
     return html !== null
       ? <span className="editor-math-inline__content editor-math-inline__rendered" dangerouslySetInnerHTML={{ __html: html }} />

@@ -12,6 +12,7 @@ import {
 } from "react-bootstrap-icons";
 import { $isMermaidNode } from "../lexical/nodes.ts";
 import { host } from "./host.ts";
+import { renderMermaid } from "../render/index.ts";
 
 // ────────────────────────────────────────────────────────────────
 // Lazy panzoom loading
@@ -66,52 +67,6 @@ async function svgToPngBase64(svgHtml: string): Promise<string> {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Lazy mermaid loading
-// ────────────────────────────────────────────────────────────────
-// Mermaid references `window` at module scope, which breaks headless
-// Node.js tests. We load it lazily via dynamic import() so the module
-// code only executes in a real browser context.
-
-type MermaidAPI = typeof import("mermaid").default;
-let mermaidModule: MermaidAPI | null = null;
-let mermaidLoadPromise: Promise<MermaidAPI> | null = null;
-let mermaidInitialized = false;
-
-async function getMermaid(): Promise<MermaidAPI> {
-  if (mermaidModule) return mermaidModule;
-  if (!mermaidLoadPromise) {
-    mermaidLoadPromise = import("mermaid").then((m) => {
-      mermaidModule = m.default;
-      return mermaidModule;
-    });
-  }
-  return mermaidLoadPromise;
-}
-
-async function ensureMermaidInit(): Promise<MermaidAPI> {
-  const mm = await getMermaid();
-  if (!mermaidInitialized) {
-    mm.initialize({
-      startOnLoad: false,
-      theme: host.theme(),
-      securityLevel: "loose",
-    });
-    mermaidInitialized = true;
-  }
-  return mm;
-}
-
-async function reinitMermaidTheme(): Promise<MermaidAPI> {
-  const mm = await getMermaid();
-  mm.initialize({
-    startOnLoad: false,
-    theme: host.theme(),
-    securityLevel: "loose",
-  });
-  return mm;
-}
-
-// ────────────────────────────────────────────────────────────────
 // Global active block tracking
 // ────────────────────────────────────────────────────────────────
 // Only one mermaid block can be active (active or edit mode) at a time.
@@ -140,7 +95,8 @@ function releaseActiveBlock(deactivate: DeactivateCallback): void {
 
 type MermaidMode = "inactive" | "active" | "edit";
 
-let renderCounter = 0;
+// The editor shows the user's own files, as the extension always has.
+const MERMAID_OPTIONS = () => ({ theme: host.theme(), securityLevel: "loose" as const });
 
 /** A Mermaid diagram: rendered, then active (pan and zoom), then edited as source; see the caret design record. */
 export function MermaidView({
@@ -182,13 +138,9 @@ export function MermaidView({
     if (mode === "edit") return;
 
     let cancelled = false;
-    const id = `mermaid-${nodeKey}-${renderCounter++}`;
-
     (async () => {
       try {
-        const mm = await ensureMermaidInit();
-        if (cancelled) return;
-        const { svg: rendered } = await mm.render(id, source);
+        const rendered = await renderMermaid(source, MERMAID_OPTIONS());
         if (!cancelled) {
           setSvg(rendered);
           setError(null);
@@ -198,9 +150,6 @@ export function MermaidView({
           setSvg(null);
           setError(err instanceof Error ? err.message : String(err));
         }
-        // Mermaid appends a broken container to the DOM on error — clean it up
-        const broken = document.getElementById("d" + id);
-        if (broken) broken.remove();
       }
     })();
 
@@ -213,17 +162,13 @@ export function MermaidView({
   useEffect(() => {
     const observer = new MutationObserver(() => {
       setSvg(null);
-      const id = `mermaid-theme-${nodeKey}-${renderCounter++}`;
       (async () => {
         try {
-          const mm = await reinitMermaidTheme();
-          const { svg: rendered } = await mm.render(id, source);
+          const rendered = await renderMermaid(source, MERMAID_OPTIONS());
           setSvg(rendered);
           setError(null);
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err));
-          const broken = document.getElementById("d" + id);
-          if (broken) broken.remove();
         }
       })();
     });

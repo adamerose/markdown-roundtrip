@@ -1,5 +1,5 @@
 import type { Root } from 'mdast'
-import type { Klass, LexicalEditor, LexicalNode, LexicalNodeReplacement } from 'lexical'
+import { $getRoot, $getSelection, type Klass, type LexicalEditor, type LexicalNode, type LexicalNodeReplacement } from 'lexical'
 import { createHeadlessEditor } from '@lexical/headless'
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { ListItemNode, ListNode } from '@lexical/list'
@@ -42,11 +42,16 @@ export function viewThroughLexical(tree: Root): Root {
 /**
  * Loads Markdown into the editor. Keep the returned base to save against.
  * The load commits like any other update (not inside the caller's React
- * render or effect); `onUpdate` runs once it has.
+ * render or effect); `onUpdate` runs once it has. A selection moves to the
+ * start, as in Lexical's own Markdown import.
  */
 export function loadMarkdown(editor: LexicalEditor, source: string, options: { tag?: string; onUpdate?: () => void } = {}): Base {
   const tree = parse(source)
-  editor.update(() => $importMdast(tree), { tag: options.tag, onUpdate: options.onUpdate })
+  editor.update(() => {
+    $importMdast(tree)
+    // The old content is gone, and a selection left on it lands on the root.
+    if ($getSelection() !== null) $getRoot().selectStart()
+  }, { tag: options.tag, onUpdate: options.onUpdate })
   return { source, tree }
 }
 
