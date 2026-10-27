@@ -31,3 +31,7 @@ node test/debug.ts [file] [label]  # print every failing edit case with its diff
 `fixtures/corpus/` holds Markdown files that once failed to round-trip.
 A file that shows an unfixed bug goes in `fixtures/corpus/broken/` (skipped by the tests).
 When it is fixed, reduce the cause to a minimal example in `fixtures/corpus/` and move the original to `fixtures/corpus/fixed/`.
+
+## Not yet done
+
+- Ivy onboarding: `/ivy:onboard` failed on 2026-10-26 because the Ivy server returned 503. Run it once Ivy is up.
